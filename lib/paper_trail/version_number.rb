@@ -1,3 +1,3 @@
 module PaperTrail
-  VERSION = '2.6.3.beta'
+  VERSION = '2.6.3.where'
 end
