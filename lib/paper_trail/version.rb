@@ -40,20 +40,8 @@ class Version < ActiveRecord::Base
 
   # Restore the item from this version.
   #
-  # This will automatically restore all :has_one associations as they were "at the time",
-  # if they are also being versioned by PaperTrail.  NOTE: this isn't always guaranteed
-  # to work so you can either change the lookback period (from the default 3 seconds) or
-  # opt out.
-  #
-  # Options:
-  # +:has_one+   set to `false` to opt out of has_one reification.
-  #              set to a float to change the lookback time (check whether your db supports
-  #              sub-second datetimes if you want them).
   def reify(options = {})
     without_identity_map do
-      options[:has_one] = 3 if options[:has_one] == true
-      options.reverse_merge! :has_one => false
-
       unless object.nil?
         attrs = YAML::load object
 
@@ -88,10 +76,6 @@ class Version < ActiveRecord::Base
         end
 
         model.send "#{model.class.version_association_name}=", self
-
-        unless options[:has_one] == false
-          reify_has_ones model, options[:has_one]
-        end
 
         model
       end
@@ -147,31 +131,6 @@ class Version < ActiveRecord::Base
       ActiveRecord::IdentityMap.without(&block)
     else
       block.call
-    end
-  end
-
-  # Restore the `model`'s has_one associations as they were when this version was
-  # superseded by the next (because that's what the user was looking at when they
-  # made the change).
-  #
-  # The `lookback` sets how many seconds before the model's change we go.
-  def reify_has_ones(model, lookback)
-    model.class.reflect_on_all_associations(:has_one).each do |assoc|
-      child = model.send assoc.name
-      if child.respond_to? :version_at
-        # N.B. we use version of the child as it was `lookback` seconds before the parent was updated.
-        # Ideally we want the version of the child as it was just before the parent was updated...
-        # but until PaperTrail knows which updates are "together" (e.g. parent and child being
-        # updated on the same form), it's impossible to tell when the overall update started;
-        # and therefore impossible to know when "just before" was.
-        if (child_as_it_was = child.version_at(send(PaperTrail.timestamp_field) - lookback.seconds))
-          child_as_it_was.attributes.each do |k,v|
-            model.send(assoc.name).send :write_attribute, k.to_sym, v rescue nil
-          end
-        else
-          model.send "#{assoc.name}=", nil
-        end
-      end
     end
   end
 

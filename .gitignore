@@ -1,4 +1,5 @@
 NOTES
+.rvmrc
 test/debug.log
 test/paper_trail_plugin.sqlite3.db
 test/dummy/db/*.sqlite3
@@ -11,3 +12,9 @@ pkg/*
 .rbenv-version
 Gemfile.lock
 vendor/*
+
+# VIM
+*.swo
+*.swp
+.swo
+.swp

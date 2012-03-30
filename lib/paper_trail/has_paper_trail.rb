@@ -105,7 +105,13 @@ module PaperTrail
         # Because a version stores how its object looked *before* the change,
         # we need to look for the first version created *after* the timestamp.
         v = send(self.class.versions_association_name).following(timestamp).first
-        v ? v.reify(reify_options) : self
+        value = v ? v.reify(reify_options) : self
+
+        if timestamp < value.created_at
+          return nil
+        end
+
+        value
       end
 
       # Returns the objects (not Versions) as they were between the given times.
@@ -149,7 +155,13 @@ module PaperTrail
 
       def record_create
         if switched_on?
-          send(self.class.versions_association_name).create merge_metadata(:event => 'create', :whodunnit => PaperTrail.whodunnit)
+          # Store the object in the database so the following case will work:
+          # i = Item.create
+          # v = i.versions.first
+          # i.destroy
+          # v.reify != nil  !!!!! WOULD FAIL
+          #  -ken
+          send(self.class.versions_association_name).create merge_metadata(:event => 'create', :whodunnit => PaperTrail.whodunnit, :object => object_to_string(self))
         end
       end
 

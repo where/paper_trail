@@ -23,7 +23,7 @@ class TimestampTest < ActiveSupport::TestCase
   test 'versions works with custom timestamp field' do
     # Normal behaviour
     assert_equal 3, @fluxor.versions.length
-    assert_nil @fluxor.versions[0].reify
+    assert_not_nil @fluxor.versions[0].reify
     assert_equal 'Some text.', @fluxor.versions[1].reify.name
     assert_equal 'Some more text.', @fluxor.versions[2].reify.name
 
@@ -35,7 +35,7 @@ class TimestampTest < ActiveSupport::TestCase
 
     # Test we are ordering by custom timestamps.
     @fluxor.versions true  # reload association
-    assert_nil @fluxor.versions[2].reify
+    assert_not_nil @fluxor.versions[2].reify
     assert_equal 'Some text.', @fluxor.versions[1].reify.name
     assert_equal 'Some more text.', @fluxor.versions[0].reify.name
   end

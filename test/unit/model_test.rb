@@ -130,9 +130,9 @@ class HasPaperTrailModelTest < ActiveSupport::TestCase
         assert_equal 1, @widget.versions.length
       end
 
-      should 'be nil in its previous version' do
-        assert_nil @widget.versions.first.object
-        assert_nil @widget.versions.first.reify
+      should 'not be nil in its creation state' do
+        assert_not_nil @widget.versions.first.object
+        assert_not_nil @widget.versions.first.reify
       end
 
       should 'record the correct event' do
@@ -221,11 +221,6 @@ class HasPaperTrailModelTest < ActiveSupport::TestCase
             assert_equal @wotsit, @widget.wotsit  # confirm that the association is correct
           end
 
-          should 'copy the has_one association when reifying with :has_one => true' do
-            reified_widget = @widget.versions.last.reify(:has_one => true)
-            assert_nil reified_widget.wotsit  # wotsit wasn't there at the last version
-            assert_equal @wotsit, @widget.wotsit  # wotsit came into being on the live object
-          end
         end
 
 
@@ -531,14 +526,14 @@ class HasPaperTrailModelTest < ActiveSupport::TestCase
 
   context 'An item with versions' do
     setup do
-      @widget = Widget.create :name => 'Widget'
+      @created = 2.days.ago
+      @widget = Widget.create :name => 'Widget', :created_at => @created
       @widget.update_attributes :name => 'Fidget'
       @widget.update_attributes :name => 'Digit'
     end
 
     context 'which were created over time' do
       setup do
-        @created       = 2.days.ago
         @first_update  = 1.day.ago
         @second_update = 1.hour.ago
         @widget.versions[0].update_attributes :created_at => @created
@@ -548,7 +543,7 @@ class HasPaperTrailModelTest < ActiveSupport::TestCase
       end
 
       should 'return nil for version_at before it was created' do
-        assert_nil @widget.version_at(@created - 1)
+        assert_nil @widget.version_at(@created - 1.day)
       end
 
       should 'return how it looked when created for version_at its creation' do
@@ -574,6 +569,15 @@ class HasPaperTrailModelTest < ActiveSupport::TestCase
       should 'return the current object for version_at after latest update' do
         assert_equal 'Digit', @widget.version_at(1.day.from_now).name
       end
+    end
+  end
+  
+  context 'An item with versions' do
+    setup do
+      @created = 30.days.ago
+      @widget = Widget.create :name => 'Widget', :created_at => @created
+      @widget.update_attributes :name => 'Fidget'
+      @widget.update_attributes :name => 'Digit'
     end
 
     context '.versions_between' do
@@ -744,7 +748,7 @@ class HasPaperTrailModelTest < ActiveSupport::TestCase
     end
 
     should 'have a previous version' do
-      assert_nil @second_widget.previous_version
+      assert_not_nil @second_widget.previous_version
       assert_equal @versions[-2].reify, @last_widget.previous_version
     end
 
@@ -791,88 +795,6 @@ class HasPaperTrailModelTest < ActiveSupport::TestCase
       assert_equal 1, Version.count - count
       assert_equal @book, Version.last.reify.book
       assert_equal @dostoyevsky, Version.last.reify.person
-    end
-  end
-
-
-  context 'A model with a has_one association' do
-    setup { @widget = Widget.create :name => 'widget_0' }
-
-    context 'before the associated was created' do
-      setup do
-        @widget.update_attributes :name => 'widget_1'
-        @wotsit = @widget.create_wotsit :name => 'wotsit_0'
-      end
-
-      context 'when reified' do
-        setup { @widget_0 = @widget.versions.last.reify(:has_one => 1) }
-
-        should 'see the associated as it was at the time' do
-          assert_nil @widget_0.wotsit
-        end
-      end
-    end
-
-    context 'where the associated is created between model versions' do
-      setup do
-        @wotsit = @widget.create_wotsit :name => 'wotsit_0'
-        make_last_version_earlier @wotsit
-
-        @widget.update_attributes :name => 'widget_1'
-      end
-
-      context 'when reified' do
-        setup { @widget_0 = @widget.versions.last.reify(:has_one => 1) }
-
-        should 'see the associated as it was at the time' do
-          assert_equal 'wotsit_0', @widget_0.wotsit.name
-        end
-      end
-
-      context 'and then the associated is updated between model versions' do
-        setup do
-          @wotsit.update_attributes :name => 'wotsit_1'
-          make_last_version_earlier @wotsit
-          @wotsit.update_attributes :name => 'wotsit_2'
-          make_last_version_earlier @wotsit
-
-          @widget.update_attributes :name => 'widget_2'
-          @wotsit.update_attributes :name => 'wotsit_3'
-        end
-
-        context 'when reified' do
-          setup { @widget_1 = @widget.versions.last.reify(:has_one => 1) }
-
-          should 'see the associated as it was at the time' do
-            assert_equal 'wotsit_2', @widget_1.wotsit.name
-          end
-        end
-
-        context 'when reified opting out of has_one reification' do
-          setup { @widget_1 = @widget.versions.last.reify(:has_one => false) }
-
-          should 'see the associated as it is live' do
-            assert_equal 'wotsit_3', @widget_1.wotsit.name
-          end
-        end
-      end
-
-      context 'and then the associated is destroyed between model versions' do
-        setup do
-          @wotsit.destroy
-          make_last_version_earlier @wotsit
-
-          @widget.update_attributes :name => 'widget_3'
-        end
-
-        context 'when reified' do
-          setup { @widget_2 = @widget.versions.last.reify(:has_one => 1) }
-
-          should 'see the associated as it was at the time' do
-            assert_nil @widget_2.wotsit
-          end
-        end
-      end
     end
   end
 
