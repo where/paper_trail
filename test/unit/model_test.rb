@@ -53,7 +53,7 @@ class HasPaperTrailModelTest < ActiveSupport::TestCase
         end
 
         should 'have kept the non-skipped attributes in the previous version' do
-          assert_equal 'Some text here.', YAML::load(@old_article.object)['content']
+          assert_equal 'More text here.', YAML::load(@old_article.object)['content']
         end
       end
     end
@@ -167,7 +167,7 @@ class HasPaperTrailModelTest < ActiveSupport::TestCase
           assert_equal 'Harry', @widget.name
           assert_not_nil @widget.versions.last.object
           widget = @widget.versions.last.reify
-          assert_equal 'Henry', widget.name
+          assert_equal 'Harry', widget.name
           assert_equal 'Harry', @widget.name
         end
 
@@ -286,7 +286,18 @@ class HasPaperTrailModelTest < ActiveSupport::TestCase
       @date_time = DateTime.now.utc
       @time = Time.now
       @date = Date.new 2009, 5, 29
-      @widget = Widget.create :name        => 'Warble',
+
+      @widget = Widget.create :name      => nil,
+                              :a_text      => nil,
+                              :an_integer  => nil,
+                              :a_float     => nil,
+                              :a_decimal   => nil,
+                              :a_datetime  => nil,
+                              :a_time      => nil,
+                              :a_date      => nil,
+                              :a_boolean   => false
+
+      @widget.update_attributes :name        => 'Warble',
                               :a_text      => 'The quick brown fox',
                               :an_integer  => 42,
                               :a_float     => 153.01,
@@ -296,15 +307,6 @@ class HasPaperTrailModelTest < ActiveSupport::TestCase
                               :a_date      => @date,
                               :a_boolean   => true
 
-      @widget.update_attributes :name      => nil,
-                              :a_text      => nil,
-                              :an_integer  => nil,
-                              :a_float     => nil,
-                              :a_decimal   => nil,
-                              :a_datetime  => nil,
-                              :a_time      => nil,
-                              :a_date      => nil,
-                              :a_boolean   => false
       @previous = @widget.versions.last.reify
     end
 
@@ -844,7 +846,8 @@ class HasPaperTrailModelTest < ActiveSupport::TestCase
       assert_equal 5, @song.length
     end
     should 'return "overwritten" value on reified instance' do
-      assert_equal 4, @song.versions.last.reify.length
+      assert_equal 5, @song.versions.last.reify.length
+      assert_equal 4, @song.versions.last.reify.previous_version.length
     end
   end
 
@@ -876,7 +879,8 @@ class HasPaperTrailModelTest < ActiveSupport::TestCase
     should 'respond to previous_version as normal' do
       @doc.update_attributes :name => 'Doc 2'
       assert_equal 3, @doc.paper_trail_versions.length
-      assert_equal 'Doc 1', @doc.previous_version.name
+      assert_equal 'Doc 2', @doc.previous_version.name
+      assert_equal 'Doc 1', @doc.previous_version.previous_version.name
     end
   end
 

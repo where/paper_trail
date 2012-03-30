@@ -24,8 +24,9 @@ class TimestampTest < ActiveSupport::TestCase
     # Normal behaviour
     assert_equal 3, @fluxor.versions.length
     assert_not_nil @fluxor.versions[0].reify
-    assert_equal 'Some text.', @fluxor.versions[1].reify.name
-    assert_equal 'Some more text.', @fluxor.versions[2].reify.name
+    assert_equal 'Some text.', @fluxor.versions[0].reify.name
+    assert_equal 'Some more text.', @fluxor.versions[1].reify.name
+    assert_equal 'Even more text.', @fluxor.versions[2].reify.name
 
     # Tinker with custom timestamps.
     now = Time.now.utc
@@ -35,9 +36,9 @@ class TimestampTest < ActiveSupport::TestCase
 
     # Test we are ordering by custom timestamps.
     @fluxor.versions true  # reload association
-    assert_not_nil @fluxor.versions[2].reify
-    assert_equal 'Some text.', @fluxor.versions[1].reify.name
-    assert_equal 'Some more text.', @fluxor.versions[0].reify.name
+    assert_equal 'Some text.', @fluxor.versions[2].reify.name
+    assert_equal 'Some more text.', @fluxor.versions[1].reify.name
+    assert_equal 'Even more text.', @fluxor.versions[0].reify.name
   end
 
 end

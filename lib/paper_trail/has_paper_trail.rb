@@ -104,7 +104,7 @@ module PaperTrail
       def version_at(timestamp, reify_options={})
         # Because a version stores how its object looked *before* the change,
         # we need to look for the first version created *after* the timestamp.
-        v = send(self.class.versions_association_name).following(timestamp).first
+        v = send(self.class.versions_association_name).following(timestamp).first.try(:previous)
         value = v ? v.reify(reify_options) : self
 
         if timestamp < value.created_at
@@ -117,7 +117,7 @@ module PaperTrail
       # Returns the objects (not Versions) as they were between the given times.
       def versions_between(start_time, end_time, reify_options={})
         versions = send(self.class.versions_association_name).between(start_time, end_time)
-        versions.collect { |version| version_at(version.send PaperTrail.timestamp_field) }
+        versions.collect { |version| version_at(version.send PaperTrail.timestamp_field) }.flatten
       end
 
       # Returns the object (not a Version) as it was most recently.
@@ -169,7 +169,7 @@ module PaperTrail
         if switched_on? && changed_notably?
           data = {
             :event     => 'update',
-            :object    => object_to_string(item_before_change),
+            :object    => object_to_string(self),
             :whodunnit => PaperTrail.whodunnit
           }
           if version_class.column_names.include? 'object_changes'
