@@ -76,6 +76,7 @@ class Version < ActiveRecord::Base
         end
 
         model.send "#{model.class.version_association_name}=", self
+        model.instance_variable_set(:'@reify_version', self)
 
         model
       end
