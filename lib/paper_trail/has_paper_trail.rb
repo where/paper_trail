@@ -95,6 +95,10 @@ module PaperTrail
         source_version.nil?
       end
 
+      def reify_version
+        @reify_version
+      end
+
       # Returns who put the object into its current state.
       def originator
         version_class.with_item_keys(self.class.name, id).last.try :whodunnit
