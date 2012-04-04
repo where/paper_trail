@@ -165,7 +165,9 @@ module PaperTrail
           # i.destroy
           # v.reify != nil  !!!!! WOULD FAIL
           #  -ken
-          send(self.class.versions_association_name).create merge_metadata(:event => 'create', :whodunnit => PaperTrail.whodunnit, :object => object_to_string(self))
+          obj = send(self.class.versions_association_name).create merge_metadata(:event => 'create', :whodunnit => PaperTrail.whodunnit, :object => object_to_string(self))
+          self.after_record_change(:create) if self.respond_to?(:after_record_change)
+          obj
         end
       end
 
@@ -182,7 +184,12 @@ module PaperTrail
               !notably_changed.include?(key)
             end.to_yaml
           end
-          send(self.class.versions_association_name).build merge_metadata(data)
+
+          obj = send(self.class.versions_association_name).create merge_metadata(data)
+
+          self.after_record_change(:update) if self.respond_to?(:after_record_change)
+
+          obj
         end
       end
 
@@ -193,6 +200,8 @@ module PaperTrail
                                               :event     => 'destroy',
                                               :object    => object_to_string(item_before_change),
                                               :whodunnit => PaperTrail.whodunnit)
+
+          self.after_record_change(:destroy) if self.respond_to?(:after_record_change)
         end
         send(self.class.versions_association_name).send :load_target
       end
