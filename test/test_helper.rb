@@ -44,6 +44,14 @@ def change_schema
 end
 
 class Version < ActiveRecord::Base
-  attr_accessible :created_at, :updated_at,
-    :answer, :action, :question, :article_id, :ip, :user_agent
+end
+
+class Shoulda::Context::Context
+  def should_change(*args)
+    yield
+  end
+
+  def should_not_change(*args)
+    yield
+  end
 end
