@@ -370,6 +370,21 @@ class HasPaperTrailModelTest < ActiveSupport::TestCase
         assert_equal    @date,                       @last.reify.a_date
         assert          @last.reify.a_boolean
       end
+
+      context "replaced by a custom setter" do
+        setup do
+          Widget.send(:define_method, "sacrificial_column=") { |x| x }
+          assert_equal "foo", (Widget.new.sacrificial_column = "foo")
+        end
+
+        should 'reify previous version' do
+          assert_kind_of Widget, @last.reify
+        end
+
+        teardown do
+          Widget.send(:remove_method, "sacrificial_column=")
+        end
+      end
     end
   end
 
