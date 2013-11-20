@@ -13,3 +13,5 @@ v.reify
 In the upstream version v.reify will be nil.  This a series of use cases not possible.
 
 - On reification store the version object.  This is so a reified object can look at the meta data that is stored in the version table.
+
+- Fix a bug in reify when an attribute has been removed but there is still a setter method.
